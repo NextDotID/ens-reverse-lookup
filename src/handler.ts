@@ -3,7 +3,7 @@ import { NODE_ADDRESS } from "./config";
 
 const abi = [{"inputs":[{"internalType":"contract ENS","name":"_ens","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[{"internalType":"address[]","name":"addresses","type":"address[]"}],"name":"getNames","outputs":[{"internalType":"string[]","name":"r","type":"string[]"}],"stateMutability":"view","type":"function"}];
 const iface = new ethers.utils.Interface(abi);
-
+const wrapperContract = "0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401";
 
 addEventListener("fetch", (event) => {
   event.respondWith(
@@ -19,23 +19,26 @@ export async function handleRequest(request: Request): Promise<Response> {
   try {
     if (pathname.startsWith("/ens")) {
 
-      let start = pathname.indexOf("/0x");
+      const start = pathname.indexOf("/0x");
       if (start == -1)
         throw "No ethereum address provided.";
       if (pathname.length <= 42 + start) {
         throw "Invalid ethereum address provided.";
       }
       const address = pathname.substring(start + 1, start + 43).toLowerCase();
+      if (address === wrapperContract) {
+        throw "Target address is the ENS ERC1155 Name Wrapper contract.";
+      }
       console.log("address: " + address);
 
       let reverseRecord: (string | null) = null;
-      let res: string = "";
+      let res = "";
       try {
         res = await queryReverseEns(address);
-        reverseRecord = await res;
+        reverseRecord = res;
         const res_parsed = JSON.parse(res).result;
         console.log(res)
-        let rr = ethers.utils.defaultAbiCoder.decode([ethers.utils.ParamType.from("string[]")], res_parsed);
+        const rr = ethers.utils.defaultAbiCoder.decode([ethers.utils.ParamType.from("string[]")], res_parsed);
         console.log("reverseRecord: " + JSON.stringify(rr));
         reverseRecord = rr[0][0];
       } catch (e) {
@@ -43,7 +46,7 @@ export async function handleRequest(request: Request): Promise<Response> {
         throw "Error contacting ethereum node. \nCause: '" + e + "'. \nResponse: " + res;
       }
 
-      let allDomains = await fetchEns(address);
+      const allDomains = await fetchEns(address);
       console.log("all domains owned: " + JSON.stringify(allDomains));
 
       if (reverseRecord == "") {
@@ -56,7 +59,7 @@ export async function handleRequest(request: Request): Promise<Response> {
         reverseRecord = null;
       }
 
-      let resp = {
+      const resp = {
         "reverseRecord": reverseRecord,
         "domains": allDomains
       };
@@ -91,7 +94,7 @@ export async function handleRequest(request: Request): Promise<Response> {
   });
 }
 
-async function queryReverseEns(address: string): Promise<any> {
+async function queryReverseEns(address: string) {
   console.log("calling node...")
   const data = iface.encodeFunctionData("getNames", [[ address.substring(2) ]]);
 
@@ -130,12 +133,17 @@ async function fetchEns(address: string): Promise<Array<string>> {
     domains(where:{owner:"${address.toLowerCase()}"}) {
       name
     }
+    wrappedDomains(where: { owner: "${address.toLowerCase()}"}) {
+      name
+    }
   }`;
 
   //console.debug("query: \n" + query);
 
   const res = await queryGraph(endpoint, query);
   //console.debug(JSON.stringify(res));
+  const domains: string[] = res.data.domains.map((d: any) => d.name);
+  const wrapped: string[] = res.data.wrappedDomains.map((d: any) => d.name);
 
-  return res.data.domains.map((d: any) => d.name);
+  return domains.concat(wrapped);
 }
