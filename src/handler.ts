@@ -130,10 +130,10 @@ async function queryGraph(endpoint: string, query: string): Promise<any> {
 async function fetchEns(address: string): Promise<Array<string>> {
   const endpoint = "https://api.thegraph.com/subgraphs/name/ensdomains/ens";
   const query = `{
-    domains(first: 1065, where: {owner: "${address.toLowerCase()}"}) {
+    domains(first: 1000, where: {owner: "${address.toLowerCase()}"}) {
       name
     }
-    wrappedDomains(first: 1065, where: {owner: "${address.toLowerCase()}"}) {
+    wrappedDomains(first: 1000, where: {owner: "${address.toLowerCase()}"}) {
       name
     }
   }`;
