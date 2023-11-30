@@ -54,10 +54,11 @@ export async function handleRequest(request: Request): Promise<Response> {
       }
 
       // if reverse record is set, validate addr owns this domain.
-      if (reverseRecord != null && !allDomains.includes(reverseRecord)) {
-        console.warn("Failed to validate! Reverse record set to " + reverseRecord + ", but user does not own this name.");
-        reverseRecord = null;
-      }
+      // Remove 2023-11-29 Zella Zhong
+      // if (reverseRecord != null && !allDomains.includes(reverseRecord)) {
+      //   console.warn("Failed to validate! Reverse record set to " + reverseRecord + ", but user does not own this name.");
+      //   reverseRecord = null;
+      // }
 
       const resp = {
         "reverseRecord": reverseRecord,
