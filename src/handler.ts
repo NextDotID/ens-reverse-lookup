@@ -46,7 +46,9 @@ export async function handleRequest(request: Request): Promise<Response> {
         throw "Error contacting ethereum node. \nCause: '" + e + "'. \nResponse: " + res;
       }
 
-      const allDomains = await fetchEns(address);
+      // Ignore ens domains for now as of TheGraph limits (2024/6/24).
+      // const allDomains = await fetchEns(address);
+      const allDomains: string[] = [];
       console.log("all domains owned: " + JSON.stringify(allDomains));
 
       if (reverseRecord == "") {
@@ -115,6 +117,7 @@ async function queryReverseEns(address: string) {
   return resp.text();
 }
 
+/* Ignore ens domains for now as of TheGraph limits (2024/6/24).
 async function queryGraph(endpoint: string, query: string): Promise<any> {
   const resp = await fetch(endpoint, {
     method: 'POST',
@@ -148,3 +151,4 @@ async function fetchEns(address: string): Promise<Array<string>> {
 
   return domains.concat(wrapped);
 }
+*/
